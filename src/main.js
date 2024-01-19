@@ -1,153 +1,153 @@
-import axios from "axios";
-
-import iziToast from 'izitoast';
-import 'izitoast/dist/css/iziToast.min.css';
-import simpleLightbox from "simplelightbox";
 
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
+import iziToast from 'izitoast';
+import 'izitoast/dist/css/iziToast.min.css';
+import axios from 'axios';
 
-const BASE_URL = "https://pixabay.com/api/";
-const API_KEY = '41701983-23ca5d5908e2c78927e8095f2';
-const ITEMS_PER_PAGE = 40;
+const form = document.querySelector('.form');
+const gallery = document.querySelector('.gallery');
+const galleryBox = document.querySelector('.gallery-box');
+const loaderTop = document.querySelector('.loader-top');
+const loaderBottom = document.querySelector('.loader-bottom');
+const input = document.querySelector('input');
+const loadImg = document.querySelector('.load-image');
+const body = document.querySelector('body');
 
-const lightbox = new SimpleLightbox(".gallery-item");
+let page = 1;
+let q = 'cat';
+let per_page = 40;
 
-const getBaseUrl = () => {
-  const url = new URL(BASE_URL);
-  url.searchParams.append("key", API_KEY);
-  url.searchParams.append("image_type", "photo");
-  url.searchParams.append("orientation", "horizontal");
-  url.searchParams.append("safesearch",true);
+const lightbox = new SimpleLightbox('.gallery a', {
+  nav: true,
+  captionDelay: 250,
+  captionsData: 'alt',
+  close: true,
+  enableKeyboard: true,
+  docClose: true,
+});
 
-  return url;
-};
+form.addEventListener('submit', onSubmit);
+loadImg.addEventListener('click', loadMore);
 
-const fetchImages = async (query, page = 1) => {
-  try {
-    const url = getBaseUrl();
-    url.searchParams.append("q", query);
-    url.searchParams.append("page", page);
-    url.searchParams.append("per_page", ITEMS_PER_PAGE);
-
-    const response = await axios.get(url.toString());
-    return response.data.hits;
-  } catch (error) {
-    console.error("Error fetching images:", error);
-    throw error;
-  }
-};
-
-const renderGallery = (images) => {
-  const galleryContainer = document.getElementById("gallery");
-  galleryContainer.innerHTML = "";
-
-  images.forEach((image) => {
-    const { webformatURL, largeImageURL, tags, likes, views, comments, downloads } = image;
-
-    galleryContainer.insertAdjacentHTML("beforeend", `
-    <li class="gallery-item">
-      <a href="${largeImageURL}">
-        <img src="${webformatURL}" alt="${tags}"/>
-      </a>
-      <div class="image-info">
-        <p>Likes: ${likes}</p>
-        <p>Views: ${views}</p>
-        <p>Comments: ${comments}</p>
-        <p>Downloads: ${downloads}</p>
-      </div>
-    </li>
-    `);
-  });
-
-  lightbox.refresh();
-};
-
-const showLoadingIndicator = () => {
-  document.getElementById("loader").style.display = "block";
-};
-
-const hideLoadingIndicator = () => {
-  document.getElementById("loader").style.display = "none";
-};
-
-const showMessage = (message, type = "info") => {
-  iziToast[type]({
-    title: message,
-    position: "topCenter",
-  });
-};
-
-const handleSearchFormSubmit = async (event) => {
+async function onSubmit(event) {
   event.preventDefault();
-  const searchInput = document.getElementById("search-input");
-  const query = searchInput.value.trim();
+  loaderTop.style.display = 'block';
+  loadImg.style.display = 'none';
+  page = 1;
+  q = event.target.elements.search.value.trim();
 
-  if (query.length < 3) {
-    showMessage("Please enter a search query with at least 3 characters", "warning");
+  if (!q) {
+    gallery.innerHTML = '';
+    iziToast.info({
+      position: 'topRight',
+      message: 'Error enter any symbols',
+    });
+    loaderTop.style.display = 'none';
     return;
   }
 
-  showLoadingIndicator();
-
   try {
-    const images = await fetchImages(query);
-    hideLoadingIndicator();
+    const {
+      data: { hits, totalHits },
+    } = await searchImg(q, page);
 
-    if (images.length > 0) {
-      renderGallery(images);
-
-      document.getElementById("load-more").style.display = images.length >= ITEMS_PER_PAGE ? "block" : "none";
+    if (hits.length > 0) {
+      loaderTop.style.display = 'none';
+      gallery.innerHTML = renderImg(hits);
+      lightbox.refresh();
+      iziToast.success({
+        position: 'topRight',
+        message: `We found ${totalHits} photos`,
+      });
+      loadImg.style.display = 'block';
     } else {
-      showMessage("Sorry, there are no images matching your search query. Please try again.", "error");
+      gallery.innerHTML = '';
+      iziToast.error({
+        position: 'topRight',
+        message:
+          'Sorry, there are no images matching your search query. Please try again!',
+      });
+    }
+
+    if (totalHits <= per_page) {
+      loadImg.style.display = 'none';
     }
   } catch (error) {
-    hideLoadingIndicator();
-    showMessage("Error fetching images. Please try again later.", "error");
+    console.log('Error');
+  } finally {
+    loaderTop.style.display = 'none';
+    event.target.reset();
   }
-};
+}
 
-const loadMoreImages = async () => {
-  const searchInput = document.getElementById("search-input");
-  const query = searchInput.value.trim();
+function searchImg(q, page) {
+  axios.defaults.baseURL = 'https://pixabay.com';
 
-  if (query.length < 3) {
-    showMessage("Please enter a search query with at least 3 characters", "warning");
-    return;
-  }
+  return axios.get('/api/', {
+    params: {
+      key: '37773269-50f55f614e71cb99e92638715',
+      q,
+      image_type: 'photo',
+      orientation: 'horizontal',
+      safesearch: true,
+      page,
+      per_page: 40,
+    },
+  });
+}
 
-  showLoadingIndicator();
+function renderImg(hits = []) {
+  return hits.reduce((html, hit) => {
+    return (
+      html +
+      `<li class="gallery-item">
+        <a href=${hit.largeImageURL}>
+          <img class="gallery-img" src =${hit.webformatURL} alt=${hit.tags}/>
+        </a>
+        <div class="gallery-text-box">
+          <p>Likes: <span class="text-value">${hit.likes}</span></p>
+          <p>views: <span class="text-value">${hit.views}</span></p>
+          <p>comments: <span class="text-value">${hit.comments}</span></p>
+          <p>downloads: <span class="text-value">${hit.downloads}</span></p>
+      </div>
+      </li>`
+    );
+  }, '');
+}
+
+async function loadMore(event) {
+  loaderBottom.style.display = 'block';
+  loadImg.style.display = 'none';
+  const listItem = document.querySelector('.gallery-item:first-child');
+  const itemHeight = listItem.getBoundingClientRect().height;
 
   try {
-    const images = await fetchImages(query, currentPage);
+    page += 1;
 
-    hideLoadingIndicator();
+    const {
+      data: { hits, totalHits },
+    } = await searchImg(q, page);
+    const totalPage = Math.ceil(totalHits / per_page);
 
-    if (images.length > 0) {
-      renderGallery(images);
-      currentPage++;
+    loadImg.style.display = 'block';
+    gallery.insertAdjacentHTML('beforeend', renderImg(hits));
+    lightbox.refresh();
 
-      window.scrollBy(0, getCardHeight());
-    } else {
-      showMessage("No more images t load", "info");
-
-      document.getElementById("load-more").style.display = "none";
+    if (page === totalPage) {
+      loadImg.style.display = 'none';
+      return iziToast.info({
+        position: 'topRight',
+        message: `We're sorry, but you've reached the end of search results.`,
+      });
     }
   } catch (error) {
-    hideLoadingIndicator();
-    showMessage("Error fetching images. Please try again later.", "error");
+    console.log(error);
+  } finally {
+    loaderBottom.style.display = 'none';
+    window.scrollBy({
+      top: 2 * itemHeight,
+      behavior: 'smooth',
+    });
   }
-};
-
-const getCardHeight = () => {
-  const firstCard = document.querySelector(".gallery-item");
-  return firstCard ? firstCard.getBoundingClientRect().height : 0;
-};
-
-let currentPage = 1;
-
-const searchForm = document.getElementById("form");
-searchForm.addEventListener("submit", handleSearchFormSubmit);
-
-const loadMoreButton = document.getElementById("load-more");
-loadMoreButton.addEventListener("click", loadMoreImages);
+}
