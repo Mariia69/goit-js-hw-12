@@ -4,21 +4,34 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/goit-js-hw-12/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vanilla App Template</title>
+    <title>Gallery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;1,500;1,600&display=swap"
+      rel="stylesheet"
+    />
     
     <script type="module" crossorigin src="/goit-js-hw-12/commonHelpers.js"></script>
-    <link rel="modulepreload" crossorigin href="/goit-js-hw-12/assets/vendor-bad0427b.js">
-    <link rel="stylesheet" href="/goit-js-hw-12/assets/vendor-eb6030bc.css">
+    <link rel="modulepreload" crossorigin href="/goit-js-hw-12/assets/vendor-c145bea9.js">
+    <link rel="stylesheet" href="/goit-js-hw-12/assets/vendor-fd638ea2.css">
   </head>
   <body>
-    <form id="form">
-      <input type="text" id="search-input" placeholder="Search for images">
-      <button type="submit" id="search-button">Search</button>
+    <section>
+      <h1>Пошук зображень.</h1>
+    <form class="form">
+      <input type="text" name="search" placeholder="Search images..." />
+      <button class="search-btn" type="submit">Search</button>
     </form>
 
-    <ul class="gallery" id="gallery"></ul>
-    <button id="load-more" style="display: none;">Load more</button>
-    <div id="loader" style="display: none;">Loading...</div>
+    <div class="gallery-box">
+      <span class="loader-top"></span>
+      <ul class="gallery"></ul>
+    </div>
+    <div class="loader-bottom-box">
+      <span class="loader-bottom"> </span>
+      <button type="button" class="load-image">Load more</button>
+    </div>
 
     
   </body>
